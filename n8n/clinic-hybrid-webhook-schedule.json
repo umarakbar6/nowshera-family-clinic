@@ -1,0 +1,181 @@
+{
+  "name": "Nowshera Clinic - Webhook and Scheduled Email Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clinic-instant-email",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "instant-webhook",
+      "name": "Instant Email Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-920, -120],
+      "webhookId": "1eb7391d-88e4-4388-8806-42cafba4af75"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-920, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nowshera-family-clinic.umarakbar611.chatgpt.site/api/clinic",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "{\"action\":\"n8n_run\"}",
+        "options": {}
+      },
+      "id": "run-scheduled-rules",
+      "name": "Process Reminders and Missed Pending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-700, 220]
+    },
+    {
+      "parameters": {
+        "url": "https://nowshera-family-clinic.umarakbar611.chatgpt.site/api/clinic?action=n8n_queue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "fetch-email-queue",
+      "name": "Fetch Queued and Failed Emails",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-470, 220]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "messages",
+        "options": {}
+      },
+      "id": "split-email-queue",
+      "name": "Split Email Queue",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [-250, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({ json: item.json.body && item.json.body.id ? item.json.body : item.json }));"
+      },
+      "id": "normalize-email",
+      "name": "Normalize Email Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 40]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.recipient_email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "send-gmail",
+      "name": "Send Email with Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [240, 40],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nowshera-family-clinic.umarakbar611.chatgpt.site/api/clinic",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ action: 'n8n_mark_sent', id: $('Normalize Email Data').item.json.id }) }}",
+        "options": {}
+      },
+      "id": "mark-email-sent",
+      "name": "Mark Email Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, -40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nowshera-family-clinic.umarakbar611.chatgpt.site/api/clinic",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ action: 'n8n_mark_failed', id: $('Normalize Email Data').item.json.id, error: $json.error?.message || $json.message || 'Gmail delivery failed' }) }}",
+        "options": {}
+      },
+      "id": "mark-email-failed",
+      "name": "Mark Email Failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 140]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Instant Email Webhook": {
+      "main": [[{"node": "Normalize Email Data", "type": "main", "index": 0}]]
+    },
+    "Every 5 Minutes": {
+      "main": [[{"node": "Process Reminders and Missed Pending", "type": "main", "index": 0}]]
+    },
+    "Process Reminders and Missed Pending": {
+      "main": [[{"node": "Fetch Queued and Failed Emails", "type": "main", "index": 0}]]
+    },
+    "Fetch Queued and Failed Emails": {
+      "main": [[{"node": "Split Email Queue", "type": "main", "index": 0}]]
+    },
+    "Split Email Queue": {
+      "main": [[{"node": "Normalize Email Data", "type": "main", "index": 0}]]
+    },
+    "Normalize Email Data": {
+      "main": [[{"node": "Send Email with Gmail", "type": "main", "index": 0}]]
+    },
+    "Send Email with Gmail": {
+      "main": [
+        [{"node": "Mark Email Sent", "type": "main", "index": 0}],
+        [{"node": "Mark Email Failed", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "versionId": "4f8247fd-77cd-4e5a-a1a3-944fd0a99877",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

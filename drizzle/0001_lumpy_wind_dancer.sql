@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX `uq_active_doctor_slot` ON `appointments` (`doctor_id`,`starts_at`) WHERE status IN ('pending','confirmed');--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_active_patient_time` ON `appointments` (`patient_id`,`starts_at`) WHERE status IN ('pending','confirmed');
