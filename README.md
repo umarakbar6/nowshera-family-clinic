@@ -56,3 +56,7 @@ failed deliveries.
 ```bash
 pnpm build
 ```
+
+The repeatable API acceptance suite is in `tests/clinic-e2e.mjs`. Run it
+against an isolated local D1 database and local server with `pnpm test:e2e`.
+See `docs/TEST_RESULTS.md` for the latest recorded run and its scope.
