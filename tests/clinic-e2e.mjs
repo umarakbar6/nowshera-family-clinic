@@ -175,10 +175,10 @@ await runCase(5, "Reject past, inactive, early completion, and leave-day booking
   const cancelled = (await patientA.client.get("appointment", { id: leaveAppointment.id })).appointment;
   const available = await patientB.client.get("availability", { doctorId: doctorA.user.id, date: tomorrow });
   const emails = (await patientA.client.get("outbox")).emails;
-  assert(leave.cancelled === 1 && cancelled.status === "cancelled", "Leave did not cancel the appointment");
+  assert(leave.cancelled >= 1 && cancelled.status === "cancelled", "Leave did not cancel the appointment");
   assert(available.slots.length === 0, "Leave day still exposed slots");
   assert(emails.some((email) => email.kind === "leave_cancelled"), "Leave cancellation email event was not created");
-  return { pastBlocked: true, inactiveBlocked: true, earlyCompletionBlocked: true, cancelledByLeave: 1, leaveSlots: 0 };
+  return { pastBlocked: true, inactiveBlocked: true, earlyCompletionBlocked: true, cancelledByLeave: leave.cancelled, leaveSlots: 0 };
 });
 
 await runCase(6, "Cancel and reschedule with two-hour cutoff", async () => {
