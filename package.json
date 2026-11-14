@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
-    "@hookform/resolvers": "^5.9.2",
+    "@hookform/resolvers": "^7.0.3",
     "@shadcn/react": "^0.3.1",
     "bcryptjs": "3.0.3",
     "class-variance-authority": "0.7.1",
