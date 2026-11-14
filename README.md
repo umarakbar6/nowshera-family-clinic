@@ -60,3 +60,7 @@ pnpm build
 The repeatable API acceptance suite is in `tests/clinic-e2e.mjs`. Run it
 against an isolated local D1 database and local server with `pnpm test:e2e`.
 See `docs/TEST_RESULTS.md` for the latest recorded run and its scope.
+
+## Authentication hardening
+
+New passwords use salted bcrypt at cost 12. Verified legacy password hashes are upgraded on the next successful login; existing hashes are not changed without the user's password. Use 12 to 72 UTF-8 bytes for new passwords. Accounts with legacy passwords longer than 72 bytes must reset their passwords to migrate. Deactivating a doctor also revokes sessions. HTTPS sessions use Secure, HttpOnly, SameSite=Strict cookies. Authentication has per-isolate throttling, bounded JSON input and same-origin checks. Configure edge rate limits for protection across multiple isolates or regions. Dependency updates preserve the existing seven-day release policy.
